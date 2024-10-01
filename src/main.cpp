@@ -55,29 +55,43 @@ void setup() {
         servos[i].setPeriodHertz(50); // Стандартный 50 Гц для сервоприводов
     }
 }
-
+double calculateFootAngle(double hipAngle, double kneeAngle) {
+    // hipAngle и kneeAngle в градусах
+    double footAngle = 90.0 - (hipAngle + kneeAngle); 
+    return footAngle;
+}
 void drive(int i, int angle) {
-    Serial.print(angle);
-    Serial.print(" ");
+  //  Serial.print(angle);
+ //   Serial.print(" ");
     
     if (i == 0) angle = map(angle, 120, 210, 150, 0);      // левое колено
     if (i == 3) angle = map(angle, 143, 250, 0, 150);      // правое колено
     if (i == 1) angle = map(angle, 34, 113, 150, 0);       // левое бедро
     if (i == 4) angle = map(angle, 12, 106, 0, 150);       // правое бедро
-    if (i == 2) angle = map(angle, 60, 84, 0, 150);        // правое бедро
-    if (i == 5) angle = map(angle, 209, 229, 0, 150);      // правое бедро
-    if (i == 6) angle = -(sensorDataArray[0].angles[0] + sensorDataArray[0].angles[1]); // левая стопа
-
+    if (i == 2) angle = map(angle, 60, 84, 0, 150);        // левое бедро отвод
+    if (i == 5) angle = map(angle, 209, 229, 0, 150);      // правое бедро отвод
+    if (i == 6) {angle =calculateFootAngle(sensorDataArray[0].angles[0],sensorDataArray[0].angles[1]); // левая стопа
+     Serial.print(angle);Serial.print("l ");
+   angle = map(angle, -233, -111, 0, 90);      // правое бедро отвод
+     Serial.println(angle);
+    }
+  if (i == 7) {
+  angle =calculateFootAngle(sensorDataArray[0].angles[3],sensorDataArray[0].angles[4]); // левая стопа
+     Serial.print(angle);Serial.print("p");
+   angle = map(angle, -233, -111, 0, 90);      // правое бедро отвод
+     Serial.println(angle);
+  }
     servos[i].write(angle);
-    Serial.println(angle);
+  //  Serial.println(angle);
 }
 
 void loop() {
     if (TwoWayESP::Available()) {
         SensorData tmp;
         TwoWayESP::GetBytes(&tmp, sizeof(SensorData));
-
+  //Serial.println("Начат процесс.");
         // Проверка состояния bt1 для начала/остановки записи
+           sensorDataArray[0] = tmp;  
         if (tmp.bt1 == 1 && lastBt1State == 0) {
             isRecording = !isRecording;  // Переключаем состояние записи
             if (isRecording) {
@@ -126,9 +140,25 @@ void loop() {
 
                 playIndex++; // Переходим к следующему элементу массива
                 if (playIndex >= 1000) {
-                    playIndex = 0; // Начинаем с начала массива
+                    playIndex = 1; // Начинаем с начала массива
                 }
             }
+        } else {
+for (int i = 0; i < 8; i++) {
+  //    tmp.angles[i]=tmp.angles[i]*5;
+   //   if(tmp.angles[i]>90)tmp.angles[i]=0;
+   // int i=5;
+  
+     drive(i,tmp.angles[i]);
+  //     i=0;
+   //  drive(i,tmp.angles[i]);
+    //  servos[i].write(tmp.angles[i]);//
+ //   Serial.print(tmp.angles[i]);
+  //  Serial.print(" ");
+     
+ }
+//  Serial.println(" ");
+
         }
 
         delay(10); // Сокращаем задержку для быстрого реагирования на изменения
